@@ -179,26 +179,22 @@ class JDIEval(
     }
 
     override fun invokeMethod(instance: Value, methodDesc: MethodDescription, arguments: List<Value>, invokespecial: Boolean): Value {
-        if (invokespecial) {
-            if (methodDesc.name == "<init>") {
-                // Constructor call
-                val ctor = findMethod(methodDesc)
-                val _class = (instance as NewObjectValue).asmType.asReferenceType() as jdi.ClassType
-                val args = arguments.map { v -> v.asJdiValue(vm) }
-                val result = mayThrow { _class.newInstance(thread, ctor, args, 0) }
-                instance.value = result
-                return result.asValue()
-            }
-            else {
-                // TODO
-                throw UnsupportedOperationException("invokespecial is not suported yet")
-            }
+        if (methodDesc.name == "<init>") {
+            // Constructor call
+            val ctor = findMethod(methodDesc)
+            val _class = (instance as NewObjectValue).asmType.asReferenceType() as jdi.ClassType
+            val args = arguments.map { v -> v.asJdiValue(vm) }
+            val result = mayThrow { _class.newInstance(thread, ctor, args, 0) }
+            instance.value = result
+            return result.asValue()
         }
         val method = findMethod(methodDesc)
 
+        // TODO: write a test for super-calls
+        val options = if (invokespecial) jdi.ObjectReference.INVOKE_NONVIRTUAL else 0
         val obj = instance.jdiObj.checkNull()
         val args = arguments.map { v -> v.asJdiValue(vm) }
-        val result = mayThrow { obj.invokeMethod(thread, method, args, 0) }
+        val result = mayThrow { obj.invokeMethod(thread, method, args, options) }
         return result.asValue()
     }
 }

@@ -12,7 +12,9 @@ class JDIEval(
         private val thread: jdi.ThreadReference
 ) : Eval {
     override fun loadClass(classType: Type): Value {
-        val loadedClasses = vm.classesByName(classType.getInternalName())
+        val canonicalName = classType.getInternalName().replace('/', '.')
+
+        val loadedClasses = vm.classesByName(canonicalName)
         if (!loadedClasses.isEmpty()) {
             return loadedClasses[0].classObject().asValue()
         }
@@ -24,7 +26,7 @@ class JDIEval(
                         true
                 ),
                 listOf(
-                        vm.mirrorOf(classType.getInternalName().replace('/', '.')).asValue(),
+                        vm.mirrorOf(canonicalName).asValue(),
                         boolean(true),
                         classLoader.asValue()
                 )

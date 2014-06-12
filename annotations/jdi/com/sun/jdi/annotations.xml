@@ -5,13 +5,22 @@
     <item name='com.sun.jdi.ClassObjectReference com.sun.jdi.ReferenceType reflectedType()'>
         <annotation name='org.jetbrains.annotations.NotNull'/>
     </item>
+    <item name='com.sun.jdi.Locatable com.sun.jdi.Location location()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
     <item name='com.sun.jdi.Location com.sun.jdi.Method method()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.sun.jdi.ObjectReference com.sun.jdi.ReferenceType referenceType()'>
         <annotation name='org.jetbrains.annotations.NotNull'/>
     </item>
     <item name='com.sun.jdi.ReferenceType com.sun.jdi.ClassObjectReference classObject()'>
         <annotation name='org.jetbrains.annotations.NotNull'/>
     </item>
     <item name='com.sun.jdi.ReferenceType java.util.List&lt;com.sun.jdi.Location&gt; allLineLocations()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.sun.jdi.ReferenceType java.util.List&lt;com.sun.jdi.Method&gt; methods()'>
         <annotation name='org.jetbrains.annotations.NotNull'/>
     </item>
     <item name='com.sun.jdi.ReferenceType java.util.List&lt;com.sun.jdi.Method&gt; methodsByName(java.lang.String, java.lang.String)'>

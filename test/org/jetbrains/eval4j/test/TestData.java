@@ -284,6 +284,10 @@ class TestData {
         return int[].class;
     }
 
+    static Class<?> byteArrayClass() {
+        return byte[].class;
+    }
+
     static int arrayOfByte() {
         byte[] a = new byte[] {1, 2, 3};
         int sum = 0;

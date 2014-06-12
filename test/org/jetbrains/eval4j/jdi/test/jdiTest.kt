@@ -5,14 +5,13 @@ import com.sun.jdi
 import junit.framework.TestSuite
 import org.jetbrains.eval4j.test.buildTestSuite
 import junit.framework.TestCase
-import org.jetbrains.eval4j.interpreterLoop
 import org.junit.Assert.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
-import org.jetbrains.eval4j.ExceptionThrown
-import org.jetbrains.eval4j.MethodDescription
-import org.jetbrains.eval4j.ValueReturned
 import org.jetbrains.eval4j.jdi.*
+import org.objectweb.asm.Type
+import java.io.File
+import com.sun.jdi.ArrayReference
 
 val DEBUGEE_CLASS = javaClass<Debugee>()
 
@@ -52,19 +51,33 @@ fun suite(): TestSuite {
                                     val breakpointRequest = vm.eventRequestManager().createBreakpointRequest(l)
                                     breakpointRequest.enable()
                                     println("Breakpoint: $breakpointRequest")
-                                    vm.resume()
                                     break
                                 }
                             }
+                            for (l in _class.allLineLocations()) {
+                                if (l.method().name() == "foo") {
+                                    val breakpointRequest = vm.eventRequestManager().createBreakpointRequest(l)
+                                    breakpointRequest.enable()
+                                    println("Breakpoint: $breakpointRequest")
+                                    break
+                                }
+                            }
+                            vm.resume()
                         }
                     }
                     is jdi.event.BreakpointEvent -> {
-                        println("Suspended at: " + event.location())
+                        println("Suspended at: " + event.location() + " in " + event.location().method())
 
-                        thread = event.thread()
-                        latch.countDown()
+                        if (event.location().method().name() == "main") {
+                            thread = event.thread()
+                            latch.countDown()
+                        }
+                        else {
+                            vm.resume()
+                        }
 
-                        break @mainLoop
+
+//                        break @mainLoop
                     }
                     else -> {}
                 }
@@ -75,6 +88,59 @@ fun suite(): TestSuite {
     vm.resume()
 
     latch.await()
+    println("Latch passed")
+
+    val eval = JDIEval(vm, classLoader!!, thread!!)
+    eval.invokeStaticMethod(
+            MethodDescription(
+                    debugeeName.replace('.', '/'),
+                    "foo",
+                    "()V",
+                    true
+            ),
+            listOf()
+    )
+
+    try {
+        val classLoaderReference = classLoader!!
+        val threadReference = thread!!
+        val eval = JDIEval(vm, classLoaderReference, threadReference)
+        val classFile = File("out/production/runtime/1.class")
+        val bytes = classFile.readBytes()
+
+        val start = System.nanoTime()
+        val arr = eval.newArray(Type.getType("[B"), classFile.length().toInt()).jdiObj as ArrayReference
+
+        for (j in 1..1) {
+            var i = 0;
+            for (b in bytes) {
+                arr.setValue(i, vm.mirrorOf(b))
+                i++
+            }
+        }
+
+        val loaded = classLoaderReference.invokeMethod(
+            threadReference,
+            classLoaderReference.referenceType().methodsByName("defineClass", "(Ljava/lang/String;[BII)Ljava/lang/Class;")[0],
+            listOf(
+                    vm.mirrorOf("0.0"),
+                    arr,
+                    vm.mirrorOf(0),
+                    vm.mirrorOf(bytes.size)
+            ),
+            0
+        ) as jdi.ClassObjectReference
+
+        println(java.lang.String.format("Loaded: %.2f", (System.nanoTime() - start) * 1e-9))
+
+//        for (m in loaded.reflectedType().methods()) {
+//            println(m)
+//        }
+    }
+    catch (e: jdi.InvocationException) {
+        val ex = e.exception()
+        println(ex)
+    }
 
     var remainingTests = AtomicInteger(0)
 

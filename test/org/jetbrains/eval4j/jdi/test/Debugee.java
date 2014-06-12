@@ -6,4 +6,8 @@ public class Debugee {
         Runtime.getRuntime();
         System.out.println("hi");
     }
+
+    public static void foo() {
+        System.out.println();
+    }
 }
